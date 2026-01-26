@@ -1,29 +1,33 @@
 // Import the express library
 const express = require("express");
-const { adminAuth } = require("./middlewares/auth");
+const connectDB = require("./config/database");
+const User = require("./models/user");
+
 // Create an instance of the express application
 const app = express();
 
-// Define a route for the root path
-// This route will be called when the user visits the root path of the website
-// res.send() is a method that sends a response to the client
-// IMPORTANT: Route order matters! Express matches routes TOP TO BOTTOM.
-// More specific routes should come BEFORE more general ones.
-// next() is a function that calls the next middleware function
-// next() is not a function that sends a response to the client
-// next() is not a function that calls the next middleware function
+// Middleware to parse JSON request bodies
+app.use(express.json());
 
-// app.use("/admin", adminAuth); is a middleware that checks if the user is authenticated
-// all "/admin" routes will be checked by the adminAuth middleware
-
-// all "/admin/getAllUsers" routes will be checked by the adminAuth middleware
-// adminAuth middleware runs first, then the route handler
-app.get('/admin/getAllUsers', adminAuth, (req, res) => {
-    res.send("Admin All Users");
+app.post("/signup", async (req, res) => {
+    try {
+        const { firstName, lastName, email, password, age, gender } = req.body;
+        const user = new User({ firstName, lastName, email, password, age, gender });
+        // Create a new user
+        // const user = new User({ firstName: "Virat", lastName: "Kohli", email: "virat.kohli@example.com", password: "password", age: 30, gender: "male" });
+        await user.save();
+        res.status(201).json({ message: "User created successfully", user: user });
+    } catch (error) {
+        res.status(500).json({ message: "User creation failed", error: error.message });
+    }
 });
 
-
-// Start the server on port 3000
-app.listen(8080, () => {
-  console.log("Server is running on port 8080");
+connectDB().then(() => {
+    console.log("MongoDB connected");
+    // Start the server on port 3000
+    app.listen(8080, () => {
+        console.log("Server is running on port 8080");
+    });
+}).catch((error) => {
+    console.log("MongoDB connection error:", error);
 });

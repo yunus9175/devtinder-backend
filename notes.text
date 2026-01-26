@@ -1,0 +1,49 @@
+route "/ab?c" is equivalent to "/abc" or "/ab" or "/ac"
+route "/ab+" is equivalent to "/ab" or "/abb" or "/abbb"
+route "/ab*b" is equivalent to "/ab" or "/abb" or "/abbb" or "/abbbbb"
+route "/ab{3}b" is equivalent to "/abbbb"
+route "/ab{3,5}b" is equivalent to "/abbbb" or "/abbbbb"
+route "/ab{3,}b" is equivalent to "/abbbb" or "/abbbbb" or "/abbbbbbb"
+route "/ab{3,5}b" is equivalent to "/abbbb" or "/abbbbb"
+route "/ab{3,5}b" is equivalent to "/abbbb" or "/abbbbb"
+route "/a(bc)+d" is equivalent to "/abcbcd" or "/abcbcbcd" or "/abcbcbcbcd"
+regex in route example: /user/[a-z0-9]+ ->
+ this will match any route that starts with /user and is followed by one or more lowercase letters or numbers
+
+
+ // route with query and params
+ app.get("/", (req, res) => {
+    console.log(req.query);
+    console.log(req.params);
+  res.send("<h1 style='color: pink;'>Hello World</h1>");
+});
+
+
+//Middleware and nex() function
+// Define a route for the root path
+// This route will be called when the user visits the root path of the website
+// res.send() is a method that sends a response to the client
+// IMPORTANT: Route order matters! Express matches routes TOP TO BOTTOM.
+// More specific routes should come BEFORE more general ones.
+// next() is a function that calls the next middleware function
+// next() is not a function that sends a response to the client
+// next() is not a function that calls the next middleware function
+
+// app.use("/admin", adminAuth); is a middleware that checks if the user is authenticated
+// all "/admin" routes will be checked by the adminAuth middleware
+app.use("/admin", adminAuth);
+// all "/admin/getAllUsers" routes will be checked by the adminAuth middleware
+app.get('/admin/getAllUsers',(req, res) => {
+    res.send("Admin All Users");
+});
+
+// all "/user/getAllUsers" routes will be checked by the userAuth middleware
+// adminAuth is a middleware that checks if the user is authenticated
+app.get('/admin/getAllUsers', (req, res) => {
+    res.send("User All Users");
+});
+
+// userAuth is a middleware that checks if the user is authenticated
+app.get('/user/getAllUsers', userAuth, (req, res) => {
+    res.send("User All Users");
+});

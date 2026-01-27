@@ -15,17 +15,23 @@ const userSchema = new Schema({
     // First name of the user
     firstName: {
         type: String,
-        required: true
+        required: true,
+        minlength: 3,
+        maxlength: 50
     },
-    // Last name of the user
+    // Last name of the user (optional)
     lastName: {
         type: String,
-        required: true
+        minlength: 3,
+        maxlength: 50
     },
     // Email of the user
     email: {
         type: String,
-        required: true
+        unique: true,
+        lowercase: true,
+        trim: true,
+        required: true,
     },
     // Password of the user
     password: {
@@ -35,24 +41,34 @@ const userSchema = new Schema({
     // Age of the user
     age: {
         type: Number,
-        required: true
+        required: true,
+        min: 18,
     },
     // Gender of the user
     gender: {
         type: String,
-        required: true
+        required: true,
+        // enum: ["male", "female", "other"],
+        validate: {
+            validator: function(v) {
+                return v === "male" || v === "female" || v === "other";
+            },
+            message: "Gender must be male, female or other"
+        }
+
     },
-    // Created at date of the user
-    createdAt: {
-        type: Date,
-        default: Date.now
+    profilePicture: {
+        type: String,
+        default: "https://37assets.37signals.com/svn/765-default-avatar.png"
     },
-    // Updated at date of the user
-    updatedAt: {
-        type: Date,
-        default: Date.now
-    }
-});
+    about: {
+        type: String,
+        default: "I am a developer who loves to code and build things."
+    },
+    skills: {
+        type: [String],
+    },
+},{timestamps:true});
 
 // Create a new model for the user
 const User = model("User", userSchema);

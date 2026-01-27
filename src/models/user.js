@@ -1,6 +1,6 @@
 // Import the Schema and model from mongoose
 const {Schema, model} = require("mongoose");
-
+const validator = require("validator");
 // Create a new schema for the user
 // The schema is a blueprint for the user collection in the database
 // The schema defines the structure of the documents in the collection
@@ -32,11 +32,23 @@ const userSchema = new Schema({
         lowercase: true,
         trim: true,
         required: true,
+        validate:{
+            validator: function(v) {
+                return validator.isEmail(v);
+            },
+            message: "Invalid email"
+        }
     },
     // Password of the user
     password: {
         type: String,
-        required: true
+        required: true,
+        validate: {
+            validator: function(v) {
+                return validator.isStrongPassword(v);
+            },
+            message: "Password is not strong"
+        }
     },
     // Age of the user
     age: {
@@ -59,7 +71,13 @@ const userSchema = new Schema({
     },
     profilePicture: {
         type: String,
-        default: "https://37assets.37signals.com/svn/765-default-avatar.png"
+        default: "https://37assets.37signals.com/svn/765-default-avatar.png",
+        validate: {
+            validator: function(v) {
+                return validator.isURL(v);
+            },
+            message: "Invalid profile picture URL"
+        }
     },
     about: {
         type: String,

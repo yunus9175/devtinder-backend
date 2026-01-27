@@ -63,9 +63,19 @@ app.delete("/user/:id", async (req, res) => {
 
 // Update a user by id
 app.patch("/user/:id", async (req, res) => {
+    // body id and updateData
+    const id = req.params.id;
+    const updateData = req.body;
+
     try {
-        const id = req.params.id;
-        const updateData = req.body;
+        const ALLOWED_UPDATES=["firstName","lastName","email","password","age","gender","profilePicture","about","skills"];
+        const isValidUpdate=Object.keys(updateData).every(key=>ALLOWED_UPDATES.includes(key));
+        if(!isValidUpdate){
+            return res.status(400).json({ message: "Invalid update data" });
+        }
+        if(updateData?.skills?.length > 10){
+            return res.status(400).json({ message: "Skills count cannot be more than 10" });
+        }
 
         const result = await User.findByIdAndUpdate(id, updateData, { new: true, runValidators: true, returnDocument: "after" });
 

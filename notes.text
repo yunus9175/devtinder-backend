@@ -47,3 +47,10 @@ app.get('/admin/getAllUsers', (req, res) => {
 app.get('/user/getAllUsers', userAuth, (req, res) => {
     res.send("User All Users");
 });
+
+API level validation using javascript:
+  const ALLOWED_UPDATES=["firstName","lastName","email","password","age","gender","profilePicture","about","skills"];
+        const isValidUpdate=Object.keys(updateData).every(key=>ALLOWED_UPDATES.includes(key));
+        if(!isValidUpdate){
+            return res.status(400).json({ message: "Invalid update data" });
+        }

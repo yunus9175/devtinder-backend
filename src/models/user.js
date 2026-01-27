@@ -53,13 +53,11 @@ const userSchema = new Schema({
     // Age of the user
     age: {
         type: Number,
-        required: true,
         min: 18,
     },
     // Gender of the user
     gender: {
         type: String,
-        required: true,
         // enum: ["male", "female", "other"],
         validate: {
             validator: function(v) {

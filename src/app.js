@@ -2,7 +2,8 @@
 const express = require("express");
 const connectDB = require("./config/database");
 const User = require("./models/user");
-
+const { validateSignupData } = require("./utils/validation");
+const bcrypt = require("bcrypt");
 // Create an instance of the express application
 const app = express();
 
@@ -13,11 +14,57 @@ app.use(express.json());
 app.post("/signup", async (req, res) => {
     try {
         // Create a new user
-        const user = new User(req.body);
+        validateSignupData(req);
+        const {firstName,lastName,email,password} = req.body;
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const user = new User({firstName,lastName,email,password: hashedPassword});
         await user.save();
-        res.status(201).json({ message: "User created successfully", user: user });
+        
+        // Return user without password
+        const userWithoutPassword = user.toObject();
+        delete userWithoutPassword.password;
+        
+        res.status(201).json({ message: "User created successfully", user: userWithoutPassword });
     } catch (error) {
-        res.status(500).json({ message: "User creation failed", error: error.message });
+        res.status(500).json({ message: "Error", error: error.message });
+    }
+});
+
+app.post("/login", async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        // Validate input
+        if (!email || !password) {
+            return res.status(400).json({ message: "Email and password are required" });
+        }
+        
+        // Normalize email (lowercase and trim) to match schema
+        const normalizedEmail = email.toLowerCase().trim();
+        
+        // Find user by normalized email
+        const user = await User.findOne({ email: normalizedEmail });
+        
+        if (!user) {
+            return res.status(401).json({ message: "Invalid email or password" });
+        }
+        
+        // Compare password
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        
+        if (!isPasswordValid) {
+            return res.status(401).json({ message: "Invalid email or password" });
+        }
+        
+        // Return user without password
+        const userWithoutPassword = user.toObject();
+        delete userWithoutPassword.password;
+        
+        res.status(200).json({ 
+            message: "Login successful", 
+            user: userWithoutPassword 
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Login failed", error: error.message });
     }
 });
 

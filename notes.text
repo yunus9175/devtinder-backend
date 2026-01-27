@@ -54,3 +54,7 @@ API level validation using javascript:
         if(!isValidUpdate){
             return res.status(400).json({ message: "Invalid update data" });
         }
+
+Password security: (bcrypt library)
+create password hashed and store
+store increpted hashed password

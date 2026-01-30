@@ -1,60 +1,90 @@
-route "/ab?c" is equivalent to "/abc" or "/ab" or "/ac"
-route "/ab+" is equivalent to "/ab" or "/abb" or "/abbb"
-route "/ab*b" is equivalent to "/ab" or "/abb" or "/abbb" or "/abbbbb"
-route "/ab{3}b" is equivalent to "/abbbb"
-route "/ab{3,5}b" is equivalent to "/abbbb" or "/abbbbb"
-route "/ab{3,}b" is equivalent to "/abbbb" or "/abbbbb" or "/abbbbbbb"
-route "/ab{3,5}b" is equivalent to "/abbbb" or "/abbbbb"
-route "/ab{3,5}b" is equivalent to "/abbbb" or "/abbbbb"
-route "/a(bc)+d" is equivalent to "/abcbcd" or "/abcbcbcd" or "/abcbcbcbcd"
-regex in route example: /user/[a-z0-9]+ ->
- this will match any route that starts with /user and is followed by one or more lowercase letters or numbers
+# DevTinder Backend – Project Notes
 
+## Project overview
+- Backend API for DevTinder (developers meet & discuss).
+- REST API with Express, MongoDB (Mongoose), JWT auth, bcrypt, validation.
 
- // route with query and params
- app.get("/", (req, res) => {
-    console.log(req.query);
-    console.log(req.params);
-  res.send("<h1 style='color: pink;'>Hello World</h1>");
-});
+## Tech stack
+- Node.js, Express 5
+- MongoDB + Mongoose
+- bcrypt (password hashing)
+- jsonwebtoken (JWT sign/verify)
+- cookie-parser (read cookies)
+- validator (email, strong password)
 
+## Project structure
+src/
+  app.js              # Entry point, all routes
+  config/database.js
+  middlewares/auth.js # userAuth (JWT from cookie → req.user); used on protected routes
+  models/user.js      # User schema + instance methods getJWT(), getValidPassword()
+  models/todo.js
+  utils/validation.js # validateSignupData, validateTodoData
 
-//Middleware and nex() function
-// Define a route for the root path
-// This route will be called when the user visits the root path of the website
-// res.send() is a method that sends a response to the client
-// IMPORTANT: Route order matters! Express matches routes TOP TO BOTTOM.
-// More specific routes should come BEFORE more general ones.
-// next() is a function that calls the next middleware function
-// next() is not a function that sends a response to the client
-// next() is not a function that calls the next middleware function
+## Implemented API routes
 
-// app.use("/admin", adminAuth); is a middleware that checks if the user is authenticated
-// all "/admin" routes will be checked by the adminAuth middleware
-app.use("/admin", adminAuth);
-// all "/admin/getAllUsers" routes will be checked by the adminAuth middleware
-app.get('/admin/getAllUsers',(req, res) => {
-    res.send("Admin All Users");
-});
+Base URL: http://localhost:8080
 
-// all "/user/getAllUsers" routes will be checked by the userAuth middleware
-// adminAuth is a middleware that checks if the user is authenticated
-app.get('/admin/getAllUsers', (req, res) => {
-    res.send("User All Users");
-});
+### Auth (public)
+- POST /signup       – Create user (validateSignupData, bcrypt hash, save user, return user without password)
+- POST /login        – Login (email+password, user.getValidPassword(), user.getJWT(), set token in cookie with 8h expiry, return user)
 
-// userAuth is a middleware that checks if the user is authenticated
-app.get('/user/getAllUsers', userAuth, (req, res) => {
-    res.send("User All Users");
-});
+### Auth & user (protected: userAuth middleware)
+- GET  /profile             – Current user (req.user set by userAuth)
+- POST /sendConnectionRequest – Send connection request (uses req.user.firstName, lastName)
+- GET  /userbyemail         – Get user by email (body: { email })
+- GET  /feed                – Get all users
+- DELETE /user/:id          – Delete user by id
+- PATCH /user/:id           – Update user (allowed: firstName, lastName, email, password, age, gender, profilePicture, about, skills; skills max 10)
 
-API level validation using javascript:
-  const ALLOWED_UPDATES=["firstName","lastName","email","password","age","gender","profilePicture","about","skills"];
-        const isValidUpdate=Object.keys(updateData).every(key=>ALLOWED_UPDATES.includes(key));
-        if(!isValidUpdate){
-            return res.status(400).json({ message: "Invalid update data" });
-        }
+### Todo
+- POST   /todo          – Create todo (validateTodoData, check duplicate title, save)
+- GET    /todo          – Get all todos
+- GET    /todo/status   – Get todos by completed (?completed=true|false)
+- PATCH  /todo/:id     – Update todo by id
+- DELETE /todo/:id     – Delete todo by id
 
-Password security: (bcrypt library)
-create password hashed and store
-store increpted hashed password
+## Route regex reference (Express)
+- "/ab?c"   → "/abc" or "/ac"
+- "/ab+"    → "/ab", "/abb", "/abbb"
+- "/ab*b"   → "/ab", "/abb", "/abbb", "/abbbbb"
+- "/ab{3}b" → "/abbbb"
+- "/ab{3,5}b" → "/abbbb" or "/abbbbb"
+- "/a(bc)+d" → "/abcbcd", "/abcbcbcd"
+- Example: /user/[a-z0-9]+ matches /user followed by one or more lowercase letters or digits
+
+## req.query vs req.params
+- req.query  – query string (?key=value)
+- req.params – route params (/user/:id → req.params.id)
+
+## Middleware and next()
+- Route order: Express matches TOP TO BOTTOM. Put specific routes before generic ones.
+- next() passes control to the next middleware; don’t call next() after sending a response.
+- Example: app.use("/admin", adminAuth) runs adminAuth for all /admin/* routes before the route handler.
+
+## API-level validation (our pattern)
+- Allowed fields for PATCH /user/:id:
+  const ALLOWED_UPDATES = ["firstName","lastName","email","password","age","gender","profilePicture","about","skills"];
+  const isValidUpdate = Object.keys(updateData).every(key => ALLOWED_UPDATES.includes(key));
+  if (!isValidUpdate) return res.status(400).json({ message: "Invalid update data" });
+
+## Password security (bcrypt)
+- Signup: hash password with bcrypt.hash(password, 10), store hashed value only.
+- Login: compare with bcrypt.compare(plainPassword, user.password).
+- Never store or send plain passwords.
+
+## JWT (our flow)
+- Login: user.getJWT() (User instance method, 10d expiry) → res.cookie("token", token, { expires: 8h }).
+- Protected routes: userAuth middleware reads req.cookies.token, jwt.verify(), loads user, sets req.user, next().
+- Use env var for JWT secret in production.
+
+## User model instance methods (src/models/user.js)
+- getJWT() – returns JWT signed with { _id }, expiresIn 10d (used at login).
+- getValidPassword(plainPassword) – returns true if plainPassword matches stored hash (used at login).
+
+## Auth middleware (src/middlewares/auth.js)
+- userAuth: read token from req.cookies, verify JWT, find user by _id, set req.user, next(). On missing/invalid token or user not found, respond 401 and do not call next().
+
+## Duplicate key (MongoDB)
+- unique: true in schema creates a unique index; duplicate insert fails with code 11000.
+- In signup catch: if (error.code === 11000 && error.keyPattern?.email) return res.status(409).json({ message: "Email already exists" });

@@ -4,6 +4,7 @@ const connectDB = require("./config/database");
 const User = require("./models/user");
 const Todo = require("./models/todo");
 const { validateSignupData, validateTodoData } = require("./utils/validation");
+const validator = require("validator");
 const bcrypt = require("bcrypt");
 // Create an instance of the express application
 const app = express();
@@ -44,6 +45,10 @@ app.post("/login", async (req, res) => {
 
         // Find user by normalized email
         const user = await User.findOne({ email: normalizedEmail });
+
+        if (!validator.isEmail(email)) {
+             return res.status(401).json({ message: "Invalid email" });
+        }
 
         if (!user) {
             return res.status(401).json({ message: "Invalid email or password" });
@@ -172,7 +177,6 @@ app.delete("/todo/:id", async (req, res) => {
     try {
         const id = req.params.id;
         const deleteTodo = await Todo.findByIdAndDelete(id)
-        console.log(deleteTodo);
         if (!deleteTodo) {
             return res.status(404).json({ message: "Todo not found" });
         }

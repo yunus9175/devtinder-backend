@@ -1,6 +1,5 @@
 const adminAuth = (req, res, next) => {
     const token="1234567890";
-    console.log("Token:", token);
     if (token) {
         next();
     } else {
@@ -10,7 +9,6 @@ const adminAuth = (req, res, next) => {
 
 const userAuth = (req, res, next) => {
     const token="1234567890";
-    console.log("Token:", token);
     if (token) {
         next();
     } else {

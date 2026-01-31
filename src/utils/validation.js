@@ -14,7 +14,7 @@ const validateSignupData = (req) => {
     }
 }
 
-const validateTodoData =async (req) => {
+const validateTodoData = async (req) => {
     const { title } = req.body
 
     if (!title) {
@@ -24,4 +24,42 @@ const validateTodoData =async (req) => {
         throw new Error("Title should not be greater that 100 chars");
     }
 }
-module.exports = { validateSignupData, validateTodoData };
+
+const validateEditProfilrData = (req) => {
+    const updateData = req.body;
+    // Only allow these fields to be updated
+    console.log({ updateData })
+    const ALLOWED_UPDATES = ["firstName", "lastName", "password", "age", "gender", "profilePicture", "about", "skills"];
+    // Ensure every key in updateData is allowed
+    const isValidUpdate = Object.keys(updateData).every(key => ALLOWED_UPDATES.includes(key));
+
+    if (!isValidUpdate) {
+        throw new Error("Invalid update data");
+    }
+    // Business rule: limit number of skills
+    if (updateData?.skills?.length > 10) {
+        throw new Error("Skills count cannot be more than 10");
+    }
+    if (updateData?.profilePicture && !validator.isURL(updateData?.profilePicture)) {
+        throw new Error("Profile URL not valid");
+    }
+}
+
+const validateProfilePassword = (req) => {
+    const { currentPassword, newPassword } = req.body;
+    const updateData = req.body;
+    const ALLOWED_UPDATES = ["currentPassword", "newPassword"];
+    // Ensure every key in updateData is allowed
+    const isValidUpdate = Object.keys(updateData).every(key => ALLOWED_UPDATES.includes(key));
+
+    if (!isValidUpdate) {
+        throw new Error("Invalid update data");
+    }
+    if (!currentPassword || !newPassword) {
+        throw new Error("Current password and new password are required");
+    }
+    if (!validator.isStrongPassword(newPassword) && !validator.isStrongPassword(currentPassword)) {
+        throw new Error("Password is not strong or current password is not strong");
+    }
+};
+module.exports = { validateSignupData, validateTodoData, validateEditProfilrData, validateProfilePassword };

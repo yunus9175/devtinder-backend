@@ -28,7 +28,6 @@ const validateTodoData = async (req) => {
 const validateEditProfilrData = (req) => {
     const updateData = req.body;
     // Only allow these fields to be updated
-    console.log({ updateData })
     const ALLOWED_UPDATES = ["firstName", "lastName", "password", "age", "gender", "profilePicture", "about", "skills"];
     // Ensure every key in updateData is allowed
     const isValidUpdate = Object.keys(updateData).every(key => ALLOWED_UPDATES.includes(key));

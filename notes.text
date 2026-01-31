@@ -88,3 +88,36 @@ Base URL: http://localhost:8080
 ## Duplicate key (MongoDB)
 - unique: true in schema creates a unique index; duplicate insert fails with code 11000.
 - In signup catch: if (error.code === 11000 && error.keyPattern?.email) return res.status(409).json({ message: "Email already exists" });
+
+## Indexes (optimize backend / DB queries)
+- Indexes speed up find, findOne, sort, and filter; without them MongoDB may scan the whole collection (slow as data grows).
+- Add indexes on fields you query often: login by email, get by _id, feed filters (e.g. age, gender), sort (e.g. createdAt).
+
+### In Mongoose
+- Single field: in schema set unique: true (e.g. email) or add index: true.
+- Compound index (multiple fields): schema.index({ field1: 1, field2: -1 }) for queries that filter/sort by both.
+- Example (user): email already has unique: true. For feed by age + gender: userSchema.index({ age: 1, gender: 1 }).
+- Example (todo): find by completed: todoSchema.index({ completed: 1 }); for sort by createdAt: index({ createdAt: -1 }).
+
+### Compound indexes
+- Compound index = index on two or more fields together. Use when you filter or sort by multiple fields in the same query.
+- Field order matters: MongoDB can use the index only for queries that match a left-to-right prefix of the index keys.
+  - Index { a: 1, b: 1, c: 1 } is used for find({ a }), find({ a, b }), find({ a, b, c }); not for find({ b }) or find({ c }) alone.
+- Put the most selective or most often filtered field first; add sort field next if you sort by it (e.g. createdAt).
+- In Mongoose: after schema definition, before model(), add e.g. userSchema.index({ age: 1, gender: 1 }); or todoSchema.index({ completed: 1, createdAt: -1 }).
+- 1 = ascending, -1 = descending (for sort order in the index).
+
+### When to add
+- Any field used in find(), findOne(), or as filter in find({ ... }).
+- Fields used in sort() (e.g. createdAt, updatedAt).
+- Unique constraints (email, username) → unique index.
+
+### Trade-offs
+- Reads get faster; writes slightly slower (index must be updated); indexes use extra storage.
+- Don’t over-index: only fields that appear in queries or need uniqueness.
+
+### Check existing indexes (Mongo shell or Compass)
+- db.users.getIndexes()
+- db.todos.getIndexes()
+- Ensure unique index on email exists so duplicate signups are rejected and lookups are fast.
+

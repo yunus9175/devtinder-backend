@@ -69,9 +69,9 @@ router.post("/login", async (req, res) => {
 
         // JWT: Generate token via User instance method (payload: _id, expires in 10d)
         const token = user.getJWT();
-        // JWT: Set token in cookie so client sends it on protected routes; cookie expires in 8 hours
+        // JWT: Set token in cookie so client sends it on protected routes; cookie expires in 10 days
         res.cookie("token", token, {
-            expires: new Date(Date.now() + 8 * 3600000),
+            expires: new Date(Date.now() + 10 * 24 * 3600000), // 10 days
         });
         // Send success response with user data (no password)
         res.status(200).json({ message: "Login successful", user: userWithoutPassword });

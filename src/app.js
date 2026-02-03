@@ -9,6 +9,8 @@ const requestRouter = require("./routes/request");
 const userRouter = require("./routes/user");
 // Import cookie-parser to read cookies from incoming requests (req.cookies)
 const cookieParser = require("cookie-parser");
+// Import cors for handling Cross-Origin Resource Sharing
+const cors = require("cors");
 
 // Create an instance of the express application (our server)
 const app = express();
@@ -17,6 +19,11 @@ const app = express();
 app.use(express.json());
 // Middleware to parse Cookie header and populate req.cookies
 app.use(cookieParser());
+// Middleware to handle CORS requests
+app.use(cors({
+    origin: "http://localhost:3000",
+    credentials: true
+}));
 
 // Mount route handlers: each router defines its own paths (e.g. /login, /profile) under the given base path
 app.use("/", authRouter);

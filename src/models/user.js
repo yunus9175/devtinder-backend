@@ -59,17 +59,20 @@ const userSchema = new Schema({
     age: {
         type: Number,
         min: 18,
+        default: null
     },
     // Gender of the user
     gender: {
         type: String,
         // enum: ["male", "female", "other"],
+        required: false,
         validate: {
             validator: function (v) {
                 return v === "male" || v === "female" || v === "other";
             },
             message: "Gender must be male, female or other"
-        }
+        },
+        default: null
 
     },
     // Profile picture URL (optional; default avatar)

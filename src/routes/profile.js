@@ -9,7 +9,8 @@ const router = express.Router()
 router.get("/profile/view", userAuth, async (req, res) => {
     try {
         // userAuth middleware already attached logged-in user to req.user
-        const user = req.user;
+        // Convert mongoose document to plain object before mutating
+        const user = req.user && typeof req.user.toObject === "function" ? req.user.toObject() : req.user;
         delete user.password;
         res.status(200).json({
             message: "Successfully get profile data",

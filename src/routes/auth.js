@@ -13,11 +13,11 @@ router.post("/signup", async (req, res) => {
         // Validate incoming signup data (name, email, password strength, etc.)
         validateSignupData(req);
         // Destructure required fields from request body
-        const { firstName, lastName, email, password } = req.body;
+        const { password, ...resdata } = req.body;
         // Hash the plain-text password before saving to DB (never store plain passwords)
         const hashedPassword = await bcrypt.hash(password, 10);
         // Create a new User document with hashed password (password: hashedPassword so we never store plain text)
-        const user = new User({ firstName, lastName, email, password: hashedPassword });
+        const user = new User({ ...resdata, password: hashedPassword });
         // Save user in MongoDB
         await user.save();
 

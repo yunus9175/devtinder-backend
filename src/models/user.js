@@ -68,7 +68,7 @@ const userSchema = new Schema({
         required: false,
         validate: {
             validator: function (v) {
-                return v === "male" || v === "female" || v === "other";
+                return !v || v === "male" || v === "female" || v === "other";
             },
             message: "Gender must be male, female or other"
         },

@@ -24,7 +24,12 @@ router.post("/signup", async (req, res) => {
         // Convert Mongoose document to plain object and remove password before sending to client
         const userWithoutPassword = user.toObject();
         delete userWithoutPassword.password;
-
+        // JWT: Generate token via User instance method (payload: _id, expires in 10d)
+        const token = user.getJWT();
+        // JWT: Set token in cookie so client sends it on protected routes; cookie expires in 10 days
+        res.cookie("token", token, {
+            expires: new Date(Date.now() + 10 * 24 * 3600000), // 10 days
+        });
         res.status(201).json({ message: "User created successfully", user: userWithoutPassword });
     } catch (error) {
         res.status(500).json({ message: "Error", error: error.message });

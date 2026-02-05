@@ -26,20 +26,20 @@ app.use(cookieParser());
 const apiBaseUrl = process.env.API_BASE_URL || '';
 let apiBasePath = process.env.API_BASE_PATH || '';
 try {
-  if (!apiBasePath && apiBaseUrl) {
-    // derive path from absolute URL (e.g. http://host:port/api/ -> /api)
-    const parsed = new URL(apiBaseUrl);
-    apiBasePath = parsed.pathname.replace(/\/$/, '');
-  }
+    if (!apiBasePath && apiBaseUrl) {
+        // derive path from absolute URL (e.g. http://host:port/api/ -> /api)
+        const parsed = new URL(apiBaseUrl);
+        apiBasePath = parsed.pathname.replace(/\/$/, '');
+    }
 } catch (e) {
-  // ignore parse errors and fall back to provided API_BASE_PATH or '/'
-  apiBasePath = apiBasePath || '';
+    // ignore parse errors and fall back to provided API_BASE_PATH or '/'
+    apiBasePath = apiBasePath || '';
 }
 if (!apiBasePath) apiBasePath = ''; // empty => mount at root
 
 const corsOrigin = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(',')
-  : (apiBaseUrl ? new URL(apiBaseUrl).origin : 'http://localhost:3000');
+    ? process.env.CORS_ORIGIN.split(',')
+    : (apiBaseUrl ? new URL(apiBaseUrl).origin : 'http://localhost:3000');
 
 app.use(cors({ origin: corsOrigin, credentials: (process.env.CORS_CREDENTIALS === 'false') ? false : true }));
 
@@ -57,12 +57,10 @@ app.use(mountAt('/'), userRouter);
 // ===========================
 // Connect to MongoDB and then start the Express server
 connectDB().then(() => {
-    console.log("MongoDB connected");
+    console.log("MongoDB connected", process.env.NODE_ENV || 'development');
     const PORT = Number(process.env.PORT) || 8080;
     app.listen(PORT, () => {
         console.log(`Server is running on port ${PORT}`);
-        console.log(`API base path: '${apiBasePath || '/'}'`);
-        if (process.env.API_BASE_URL) console.log(`Configured API_BASE_URL: ${process.env.API_BASE_URL}`);
     });
 }).catch((error) => {
     console.log("MongoDB connection error:", error);

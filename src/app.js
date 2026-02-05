@@ -57,7 +57,7 @@ app.use(mountAt('/'), userRouter);
 // ===========================
 // Connect to MongoDB and then start the Express server
 connectDB().then(() => {
-    console.log("MongoDB connected", process.env.NODE_ENV || 'development');
+    console.log("MongoDB connected");
     const PORT = Number(process.env.PORT) || 8080;
     app.listen(PORT, () => {
         console.log(`Server is running on port ${PORT}`);

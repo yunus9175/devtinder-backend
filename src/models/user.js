@@ -101,8 +101,8 @@ const userSchema = new Schema({
 // Payload contains _id; token expires in 10 days. Use env var for secret in production.
 userSchema.methods.getJWT = function () {
     const user = this;
-    const token = jwt.sign({ _id: user._id }, "DEVTINDE@ADVANCECOURS123", {
-        expiresIn: "10d",
+    const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, {
+        expiresIn: process.env.JWT_EXPIRES || "10d",
     });
     return token;
 };

@@ -12,8 +12,8 @@ const userAuth = async (req, res, next) => {
         if (!token) {
             return res.status(401).json({ message: "Unauthorized: please login first" });
         }
-        // Verify token and decode payload (throws if expired or invalid; use same secret as sign)
-        const decodedToken = jwt.verify(token, "DEVTINDE@ADVANCECOURS123");
+        // Verify token and decode payload (throws if expired or invalid; secret is loaded from env)
+        const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
         const { _id } = decodedToken;
         // Load user from DB so route handlers can use req.user
         const findLoggedInUser = await User.findOne({ _id });

@@ -72,6 +72,25 @@ router.post("/login", async (req, res) => {
         const userWithoutPassword = user.toObject();
         delete userWithoutPassword.password;
 
+        // Try to attach connection counts (do not block login on failure)
+        try {
+            const ConnectionRequest = require("../models/connectionRequest");
+            const userId = user._id;
+            const pendingIncomingP = ConnectionRequest.countDocuments({ toUserId: userId, status: 'interested' });
+            const pendingOutgoingP = ConnectionRequest.countDocuments({ fromUserId: userId, status: 'interested' });
+            const acceptedP = ConnectionRequest.countDocuments({
+                $and: [
+                    { status: 'accepted' },
+                    { $or: [{ fromUserId: userId }, { toUserId: userId }] }
+                ]
+            });
+            const [pendingIncoming, pendingOutgoing, accepted] = await Promise.all([pendingIncomingP, pendingOutgoingP, acceptedP]);
+            userWithoutPassword.connectionCounts = { pendingIncoming, pendingOutgoing, accepted };
+        } catch (countErr) {
+            console.warn('Could not compute connection counts at login:', countErr && countErr.message);
+            userWithoutPassword.connectionCounts = { pendingIncoming: 0, pendingOutgoing: 0, accepted: 0 };
+        }
+
         // JWT: Generate token via User instance method (payload: _id, expires in 10d)
         const token = user.getJWT();
         // JWT: Set token in cookie so client sends it on protected routes; cookie expires in 10 days

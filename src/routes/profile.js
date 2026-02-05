@@ -12,6 +12,30 @@ router.get("/profile/view", userAuth, async (req, res) => {
         // Convert mongoose document to plain object before mutating
         const user = req.user && typeof req.user.toObject === "function" ? req.user.toObject() : req.user;
         delete user.password;
+
+        // Connection counts: pending (status: 'interested') and accepted connections
+        // pendingIncoming: other users who expressed interest in me (toUserId === me && status === 'interested')
+        // pendingOutgoing: connection requests I sent that are still 'interested' (fromUserId === me && status === 'interested')
+        // accepted: total accepted connections where either fromUserId or toUserId is me
+        const userId = (req.user && req.user._id) || user._id;
+        const ConnectionRequest = require("../models/connectionRequest");
+        const pendingIncomingP = ConnectionRequest.countDocuments({ toUserId: userId, status: 'interested' });
+        const pendingOutgoingP = ConnectionRequest.countDocuments({ fromUserId: userId, status: 'interested' });
+        const acceptedP = ConnectionRequest.countDocuments({
+            $and: [
+                { status: 'accepted' },
+                { $or: [{ fromUserId: userId }, { toUserId: userId }] }
+            ]
+        });
+
+        const [pendingIncoming, pendingOutgoing, accepted] = await Promise.all([pendingIncomingP, pendingOutgoingP, acceptedP]);
+
+        user.connectionCounts = {
+            pendingIncoming,
+            pendingOutgoing,
+            accepted
+        };
+
         res.status(200).json({
             message: "Successfully get profile data",
             data: user,

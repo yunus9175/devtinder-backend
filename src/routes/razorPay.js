@@ -51,7 +51,7 @@ router.post('/payment/create', userAuth, async (req, res) => {
         res.status(200).json({
             message: 'Order created successfully',
             order,
-            keyId: process.env.RAZORPAY_KEY_SECRET
+            keyId: process.env.RAZORPAY_KEY_ID
         });
     } catch (error) {
         console.error('Error creating order:', error);
@@ -64,7 +64,7 @@ router.post('/payment/create', userAuth, async (req, res) => {
 router.post('/payment/webhook', async (req, res) => {
     const signature = req.headers['X-Razorpay-Signature'];
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
-
+    console.log({ signature, secret });
     if (!signature || !secret) {
         return res.status(400).json({ error: 'Missing signature or webhook secret' });
     }

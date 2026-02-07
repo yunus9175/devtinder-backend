@@ -68,13 +68,13 @@ router.post('/payment/webhook', async (req, res) => {
     if (!signature || !secret) {
         return res.status(400).json({ error: 'Missing signature or webhook secret' });
     }
-    console.log({ rawBody });
+    console.log("body", req.body);
 
     const rawBody = typeof req.body === 'string' ? req.body : (req.body && req.body.toString ? req.body.toString() : '');
     if (!rawBody) {
         return res.status(400).json({ error: 'Missing webhook body' });
     }
-
+    console.log("rawBody", rawBody);
     try {
         validateWebhookSignature(rawBody, signature, secret);
     } catch (error) {

@@ -62,7 +62,7 @@ router.post('/payment/create', userAuth, async (req, res) => {
 // Webhook handler: must receive raw body (Buffer) for signature verification.
 // Mount in app.js with express.raw({ type: 'application/json' }) before express.json().
 router.post('/payment/webhook', async (req, res) => {
-    const signature = req.headers['X-Razorpay-Signature'];
+    const signature = req.headers['x-razorpay-signature'];
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
     console.log({ signature, secret });
     if (!signature || !secret) {

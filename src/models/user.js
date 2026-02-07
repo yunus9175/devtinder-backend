@@ -95,6 +95,12 @@ const userSchema = new Schema({
     skills: {
         type: [String],
     },
+    // Membership type
+    membershipType: {
+        type: String,
+        enum: ["basic", "standard", "premium"],
+        default: "basic"
+    },
 }, { timestamps: true });
 
 // Instance method: generate JWT for this user (used after login)

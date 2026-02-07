@@ -1,6 +1,6 @@
 // Load .env early (safe: .env is gitignored)
 require('dotenv').config();
-
+require('./utils/cronjob'); // start cron jobs
 // Import the express library (framework to build APIs)
 const express = require("express");
 // Import MongoDB connection helper
@@ -10,6 +10,7 @@ const authRouter = require("./routes/auth");
 const profileRouter = require("./routes/profile");
 const requestRouter = require("./routes/request");
 const userRouter = require("./routes/user");
+const rozarPayRouter = require("./routes/razorPay");
 // Import cookie-parser to read cookies from incoming requests (req.cookies)
 const cookieParser = require("cookie-parser");
 // Import cors for handling Cross-Origin Resource Sharing
@@ -51,6 +52,7 @@ app.use(mountAt('/'), authRouter);
 app.use(mountAt('/'), profileRouter);
 app.use(mountAt('/'), requestRouter);
 app.use(mountAt('/'), userRouter);
+app.use(mountAt('/'), rozarPayRouter);
 
 // ===========================
 // SERVER & DATABASE STARTUP

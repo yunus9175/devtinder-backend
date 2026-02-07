@@ -1,15 +1,5 @@
 // Load environment variables from .env into process.env (must run before using env vars; .env is gitignored)
 require('dotenv').config();
-// Load cronjob only if node-cron is available (app still runs if dependency is missing)
-try {
-    require('./utils/cronjob');
-} catch (err) {
-    if (err.code === 'MODULE_NOT_FOUND') {
-        console.warn('Cronjobs disabled (missing node-cron). Run npm install and restart to enable.');
-    } else {
-        console.warn('Cronjobs disabled:', err.message);
-    }
-}
 
 // Import Express: web framework used to build the API (routes, middleware, server)
 const express = require("express");

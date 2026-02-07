@@ -95,11 +95,20 @@ const userSchema = new Schema({
     skills: {
         type: [String],
     },
+
+    isPremium: {
+        type: Boolean,
+        default: false
+    },
     // Membership type
     membershipType: {
         type: String,
         enum: ["basic", "standard", "premium"],
         default: "basic"
+    },
+    membershipExpiry: {
+        type: Date,
+        default: null
     },
 }, { timestamps: true });
 

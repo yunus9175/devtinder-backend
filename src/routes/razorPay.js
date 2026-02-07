@@ -2,11 +2,13 @@ const express = require('express');
 const router = express.Router();
 const Razorpay = require('../utils/razorpay');
 const Payment = require('../models/razorPay');
+const User = require('../models/user');
 const { userAuth } = require('../middlewares/auth');
-const { membershipAmount } = require('../utils/constants');
+const { membershipAmount, membershipDurationDays } = require('../utils/constants');
+const { validateWebhookSignature } = require('razorpay/dist/utils/razorpay-utils');
 
 // Route to create a new payment order
-router.post('/create-order', userAuth, async (req, res) => {
+router.post('/payment/create', userAuth, async (req, res) => {
     const userId = req.user._id;
     const membershipType = req.body.membershipType;
 
@@ -53,6 +55,64 @@ router.post('/create-order', userAuth, async (req, res) => {
     } catch (error) {
         console.error('Error creating order:', error);
         res.status(500).json({ error: 'Failed to create order' });
+    }
+});
+
+// Webhook handler: must receive raw body (Buffer) for signature verification.
+// Mount in app.js with express.raw({ type: 'application/json' }) before express.json().
+router.post('/payment/webhook', async (req, res) => {
+    const signature = req.headers['X-Razorpay-Signature'];
+    const secret = process.env.TEST_WEBHOOK_SECRET;
+
+    if (!signature || !secret) {
+        return res.status(400).json({ error: 'Missing signature or webhook secret' });
+    }
+
+    const rawBody = typeof req.body === 'string' ? req.body : (req.body && req.body.toString ? req.body.toString() : '');
+    if (!rawBody) {
+        return res.status(400).json({ error: 'Missing webhook body' });
+    }
+
+    try {
+        validateWebhookSignature(rawBody, signature, secret);
+    } catch (error) {
+        console.error('Webhook signature verification failed:', error?.message);
+        return res.status(401).json({ error: 'Invalid webhook signature' });
+    }
+
+    let payload;
+    try {
+        payload = JSON.parse(rawBody);
+    } catch (e) {
+        return res.status(400).json({ error: 'Invalid JSON body' });
+    }
+
+    const event = payload.event;
+    const paymentEntity = payload.payload?.payment?.entity;
+
+    try {
+        if (event === 'payment.captured' && paymentEntity) {
+            const updatedPayment = await Payment.findOneAndUpdate(
+                { orderId: paymentEntity.order_id },
+                { status: 'paid' },
+                { new: true }
+            );
+            if (updatedPayment?.userId && updatedPayment?.notes?.membershipType) {
+                const membershipType = updatedPayment.notes.membershipType;
+                const days = membershipDurationDays[membershipType] ?? 30;
+                const membershipExpiry = new Date();
+                membershipExpiry.setDate(membershipExpiry.getDate() + days);
+                await User.findByIdAndUpdate(updatedPayment.userId, {
+                    membershipType,
+                    isPremium: true,
+                    membershipExpiry
+                });
+            }
+        }
+        res.status(200).json({ received: true });
+    } catch (err) {
+        console.error('Webhook processing error:', err);
+        res.status(500).json({ error: 'Webhook processing failed' });
     }
 });
 

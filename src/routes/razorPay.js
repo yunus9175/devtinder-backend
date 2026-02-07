@@ -70,7 +70,7 @@ router.post('/payment/webhook', async (req, res) => {
     }
     console.log("body", req.body);
 
-    const rawBody = typeof req.body === 'string' ? req.body : (req.body && req.body.toString ? req.body.toString() : '');
+    const rawBody = JSON.stringify(req.body);
     if (!rawBody) {
         return res.status(400).json({ error: 'Missing webhook body' });
     }

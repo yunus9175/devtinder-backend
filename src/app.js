@@ -1,7 +1,6 @@
 // Load environment variables from .env into process.env (must run before using env vars; .env is gitignored)
 require('dotenv').config();
 // Load and run cronjob utility so scheduled tasks (e.g. daily metrics) start with the app
-require('./utils/cronjob');
 
 // Import Express: web framework used to build the API (routes, middleware, server)
 const express = require("express");

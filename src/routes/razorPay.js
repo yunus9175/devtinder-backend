@@ -54,7 +54,6 @@ router.post('/payment/create', userAuth, async (req, res) => {
             keyId: process.env.RAZORPAY_KEY_ID
         });
     } catch (error) {
-        console.error('Error creating order:', error);
         res.status(500).json({ error: 'Failed to create order', message: error.message });
     }
 });
@@ -64,21 +63,17 @@ router.post('/payment/create', userAuth, async (req, res) => {
 router.post('/payment/webhook', async (req, res) => {
     const signature = req.headers['x-razorpay-signature'];
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
-    console.log({ signature, secret });
     if (!signature || !secret) {
         return res.status(400).json({ error: 'Missing signature or webhook secret' });
     }
-    console.log("body", req.body);
 
     const rawBody = JSON.stringify(req.body);
     if (!rawBody) {
         return res.status(400).json({ error: 'Missing webhook body' });
     }
-    console.log("rawBody", rawBody);
     try {
         validateWebhookSignature(rawBody, signature, secret);
     } catch (error) {
-        console.error('Webhook signature verification failed:', error?.message);
         return res.status(401).json({ error: 'Invalid webhook signature' });
     }
 
@@ -86,13 +81,10 @@ router.post('/payment/webhook', async (req, res) => {
     try {
         payload = JSON.parse(rawBody);
     } catch (e) {
-        console.log({ e });
         return res.status(400).json({ error: 'Invalid JSON body' });
     }
-    console.log({ payload });
     const event = payload.event;
     const paymentEntity = payload.payload?.payment?.entity;
-    console.log({ event, paymentEntity });
     try {
         if (event === 'payment.captured' && paymentEntity) {
             const updatedPayment = await Payment.findOneAndUpdate(
@@ -114,7 +106,6 @@ router.post('/payment/webhook', async (req, res) => {
         }
         res.status(200).json({ received: true });
     } catch (err) {
-        console.error('Webhook processing error:', err);
         res.status(500).json({ error: 'Webhook processing failed' });
     }
 });

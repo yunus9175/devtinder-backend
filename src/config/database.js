@@ -31,7 +31,6 @@ const connectDB = async () => {
 
     // If primary succeeded, log is handled by caller and we can return early
     if (primary.ok) {
-        console.log('MongoDB connected (primary)');
         return;
     }
 

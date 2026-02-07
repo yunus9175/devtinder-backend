@@ -86,12 +86,13 @@ router.post('/payment/webhook', async (req, res) => {
     try {
         payload = JSON.parse(rawBody);
     } catch (e) {
+        console.log({ e });
         return res.status(400).json({ error: 'Invalid JSON body' });
     }
-
+    console.log({ payload });
     const event = payload.event;
     const paymentEntity = payload.payload?.payment?.entity;
-
+    console.log({ event, paymentEntity });
     try {
         if (event === 'payment.captured' && paymentEntity) {
             const updatedPayment = await Payment.findOneAndUpdate(

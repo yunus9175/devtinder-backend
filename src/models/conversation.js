@@ -11,6 +11,12 @@ const conversationSchema = new Schema({
         ref: 'User',
         required: true,
     }],
+    // For direct only: sorted participant ids joined, e.g. "id1_id2". Ensures one conversation per pair.
+    participantKey: {
+        type: String,
+        default: null,
+        sparse: true,
+    },
     name: {
         type: String,
         default: null,
@@ -20,8 +26,8 @@ const conversationSchema = new Schema({
     timestamps: true,
 });
 
-// For direct: only one conversation per pair (order-independent)
-conversationSchema.index({ type: 1, participants: 1 }, { unique: true });
+// Unique per direct pair (participantKey = "smallerId_largerId"). Sparse so group convos (null key) don't conflict.
+conversationSchema.index({ type: 1, participantKey: 1 }, { unique: true, sparse: true });
 conversationSchema.index({ participants: 1, updatedAt: -1 });
 
 const Conversation = model('Conversation', conversationSchema);

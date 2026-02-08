@@ -8,13 +8,20 @@ const mongoose = require('mongoose');
 const Message = require('../models/message');
 const Conversation = require('../models/conversation');
 
+function getDirectParticipantKey(userId, targetUserId) {
+    const a = String(userId);
+    const b = String(targetUserId);
+    return [a, b].sort((x, y) => x.localeCompare(y)).join('_');
+}
+
 async function getOrCreateDirectConversation(userId, targetUserId) {
     const a = new mongoose.Types.ObjectId(userId);
     const b = new mongoose.Types.ObjectId(targetUserId);
     const participants = [a, b].sort((x, y) => x.toString().localeCompare(y.toString()));
-    let conv = await Conversation.findOne({ type: 'direct', participants });
+    const participantKey = getDirectParticipantKey(userId, targetUserId);
+    let conv = await Conversation.findOne({ type: 'direct', participantKey });
     if (!conv) {
-        conv = await Conversation.create({ type: 'direct', participants });
+        conv = await Conversation.create({ type: 'direct', participants, participantKey });
     }
     return conv;
 }

@@ -28,8 +28,9 @@ async function getOrCreateDirectConversation(userId, targetUserId) {
 
 const initializeSocket = (server, { corsOrigin, basePath = '' }) => {
     const normalizedBase = (basePath && basePath !== '/') ? basePath.replace(/\/$/, '') : '';
-    const socketPath = (process.env.NODE_ENV || 'development') === 'development' ? '/socket.io' : `api/socket.io`;
+    const socketPath = process.env.NODE_ENV === 'development' ? '/socket.io' : `api/socket.io`;
     console.log("socketPath", socketPath);
+    console.log("process.env.NODE_ENV", process.env.NODE_ENV);
     console.log("corsOrigin", corsOrigin);
     console.log("basePath", basePath);
     console.log("normalizedBase", normalizedBase);

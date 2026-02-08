@@ -11,10 +11,15 @@ const profileRouter = require("./routes/profile");     // get/update user profil
 const requestRouter = require("./routes/request");    // connection requests (e.g. likes, matches)
 const userRouter = require("./routes/user");          // user listing, search, etc.
 const rozarPayRouter = require("./routes/razorPay");  // payment create, webhook
+const messagesRouter = require("./routes/messages"); // chat message history, mark read
+const conversationsRouter = require("./routes/conversations"); // get/create direct conversation
 // Import cookie-parser: parses Cookie header and puts result in req.cookies
 const cookieParser = require("cookie-parser");
 // Import CORS: configures which origins can call this API (Cross-Origin Resource Sharing)
 const cors = require("cors");
+
+const http = require('http');
+const { initializeSocket } = require('./utils/socket');
 
 // Create the Express app instance (the main application object)
 const app = express();
@@ -45,13 +50,18 @@ app.use(express.json());
 // Parse Cookie header and put key-value pairs in req.cookies
 app.use(cookieParser());
 
-// --- CORS: which origins are allowed to call this API ---
-// Allowed origin(s): from CORS_ORIGIN env (comma-separated), or from apiBaseUrl, or default localhost:3000
+// --- CORS: which origins are allowed to call this API (and Socket.IO) ---
+// Set CORS_ORIGIN to your frontend origin (e.g. http://localhost:5173 for Vite). Default: 5173 for dev.
 const corsOrigin = process.env.CORS_ORIGIN
     ? process.env.CORS_ORIGIN.split(',')
-    : (apiBaseUrl ? new URL(apiBaseUrl).origin : 'http://localhost:3000');
+    : (apiBaseUrl ? new URL(apiBaseUrl).origin : 'http://localhost:5173');
 // Enable CORS with that origin; send cookies with cross-origin requests unless CORS_CREDENTIALS is 'false'
 app.use(cors({ origin: corsOrigin, credentials: (process.env.CORS_CREDENTIALS === 'false') ? false : true }));
+
+// --- Health / chat status (no auth): so frontend can check backend + Socket.IO are up ---
+app.get(mountAt('/health'), (req, res) => {
+    res.json({ ok: true, socket: true });
+});
 
 // --- Mount route handlers: all under the same base path (e.g. /api) ---
 // Each router handles its own paths (e.g. authRouter handles POST /login, /signup, /logout)
@@ -59,8 +69,14 @@ app.use(mountAt('/'), authRouter);
 app.use(mountAt('/'), profileRouter);
 app.use(mountAt('/'), requestRouter);
 app.use(mountAt('/'), userRouter);
+app.use(mountAt('/'), conversationsRouter);
+app.use(mountAt('/'), messagesRouter);
 app.use(mountAt('/'), rozarPayRouter);
 
+const server = http.createServer(app);
+
+// Socket.IO path: /socket.io or /api/socket.io when API_BASE_PATH is set (see docs/BACKEND_SOCKET_CHAT.md)
+initializeSocket(server, { corsOrigin, basePath: apiBasePath });
 // ===========================
 // SERVER & DATABASE STARTUP
 // ===========================
@@ -70,7 +86,9 @@ connectDB().then(() => {
     // Port from env or default 8080
     const PORT = Number(process.env.PORT) || 8080;
     // Start listening for HTTP requests
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
+        const normalizedBase = (apiBasePath && apiBasePath !== '/') ? apiBasePath.replace(/\/$/, '') : '';
+        const socketPath = normalizedBase ? `${normalizedBase}/socket.io` : '/socket.io';
         console.log(`Server is running on port ${PORT}`);
     });
 }).catch((error) => {

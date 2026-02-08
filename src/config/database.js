@@ -16,6 +16,24 @@ async function tryConnect(uri, opts = {}) {
     }
 }
 
+// One-time fix: drop old conversations index and backfill participantKey so getOrCreateDirectConversation works
+async function fixConversationsIndex() {
+    const coll = mongoose.connection.db.collection('conversations');
+    try {
+        await coll.dropIndex('type_1_participants_1');
+    } catch (e) {
+        if (e.code !== 27 && e.codeName !== 'IndexNotFound' && !/index not found/i.test(e.message)) throw e;
+    }
+    const Conversation = require('../models/conversation');
+    const direct = await Conversation.find({ type: 'direct', $or: [{ participantKey: null }, { participantKey: { $exists: false } }] }).lean();
+    for (const c of direct) {
+        const ids = (c.participants || []).map((p) => p.toString()).sort((a, b) => a.localeCompare(b));
+        if (ids.length === 2) {
+            await coll.updateOne({ _id: c._id }, { $set: { participantKey: ids.join('_') } });
+        }
+    }
+}
+
 // connectDB: main startup function used by the app to ensure a working DB connection
 const connectDB = async () => {
     // Read primary DB connection string from environment (.env or host env)
@@ -29,8 +47,9 @@ const connectDB = async () => {
     // Attempt to connect to the primary (production) DB first (e.g. Atlas)
     const primary = await tryConnect(primaryUri, { timeout: 8000 });
 
-    // If primary succeeded, log is handled by caller and we can return early
+    // If primary succeeded, run conversations index fix and return
     if (primary.ok) {
+        await fixConversationsIndex();
         return;
     }
 
@@ -42,6 +61,7 @@ const connectDB = async () => {
     if ((process.env.NODE_ENV || 'development') === 'development') {
         const local = await tryConnect('mongodb://localhost:27017/devTinder', { timeout: 3000 });
         if (local.ok) {
+            await fixConversationsIndex();
             console.log('MongoDB connected (local development)');
             return;
         }
